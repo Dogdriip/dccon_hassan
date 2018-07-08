@@ -11,6 +11,9 @@ import os
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+DCCON_SEARCH_URL = "http://dccon.dcinside.com/hot/1/title/"
+DCCON_DETAILS_URL = "http://dccon.dcinside.com/#"
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
 
 client = Bot(command_prefix='')
 
@@ -23,33 +26,32 @@ async def on_ready():
 
 @client.event
 async def on_message(msg):
-    if msg.content.startswith('!'):
-        print("message identified: {}".format(msg.content))
-        name, idx = msg.content.split()
-        name = name[1:]  # ignore first char(prefix) and override it
-        print("interpreted: {}, {}".format(name, idx))
+    if msg.content.startswith('!'):  # usage: !dccon pkg name 01
+        print("{} | message identified: {}".format(str(datetime.now()), msg.content))
+        msg_list = msg.content.split()
+        idx = msg_list[-1]  # last word in message goes to index
+        package_name = " ".join(str(x) for x in msg_list[0:-1])  # stupid
+        print("{} | interpreted: {}, {}".format(str(datetime.now()), package_name, idx))
 
-        DCCON_SEARCH_URL = "http://dccon.dcinside.com/hot/1/title/"
-        DCCON_DETAILS_URL = "http://dccon.dcinside.com/#"
-        USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
         options = webdriver.ChromeOptions()
         options.add_argument("headless")
         options.add_argument("window-size=1920x1080")
         options.add_argument("disable-gpu")
         options.add_argument("user-agent=" + USER_AGENT)
-
         driver = webdriver.Chrome("driver/chromedriver", chrome_options=options)
 
-        driver.get(DCCON_SEARCH_URL + name)
-        dccon_searchlist = list(driver.find_elements_by_css_selector("body > div.wrap_dccone > div.content > div.shop_cont > div > div.sticker_list_box > ul > li"))
-        target_dccon = dccon_searchlist[0]  # pick first dccon from search list
+        # search dccon package with package_name
+        driver.get(DCCON_SEARCH_URL + package_name)
+        package_search_list = list(driver.find_elements_by_css_selector("body > div.wrap_dccone > div.content > div.shop_cont > div > div.sticker_list_box > ul > li"))
+        target_package = package_search_list[0]  # pick first dccon package from search list
 
-        dccon_idx = target_dccon.get_attribute("package_idx")
+        target_package_num = target_package.get_attribute("package_idx")  # get dccon number of target dccon package
 
-        driver.get(DCCON_DETAILS_URL + dccon_idx)
+        # go to detail page
+        driver.get(DCCON_DETAILS_URL + target_package_num)
         html = driver.page_source
-
         soup = BeautifulSoup(html, 'html.parser')
+
         # dccon_li_list = soup.select("#package_detail > div > ul.Img_box.detail_icon > li")
 
         # dccon_img_list = []
@@ -58,18 +60,18 @@ async def on_message(msg):
         #     print(str(li))
         #     dccon_img_list.append(li.select("img"))
 
-        dccon = soup.find(attrs={"alt": idx})
+        dccon = soup.find(attrs={"alt": idx})  # find specified dccon in target package
         dccon_img = dccon['src']
 
-        response = requests.get("http:" + dccon_img, headers={'Referer': DCCON_DETAILS_URL+dccon_idx})
-
+        response = requests.get("http:" + dccon_img, headers={'Referer': DCCON_DETAILS_URL + target_package_num})
         buffer = BytesIO(response.content)
-
-        await client.send_file(msg.channel, fp=buffer, filename="dccon.png")
+        await client.send_file(msg.channel, fp=buffer, filename="dccon.gif")
 
         # if str(idx) is None:
 
-        driver.quit()
+        # TODO: 예외처리!
+
+        # driver.quit()
 
 
 if __name__ == "__main__":
