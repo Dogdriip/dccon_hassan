@@ -1,7 +1,20 @@
-일단 올려놓고 보자
+# 디시콘 핫산
+디시콘을 디스코드에서 쓸 수 있게 해주는 디스코드 봇입니다.
 
-밤에 삘 꽂혀서 호다닥 만들었다. 작동은 된다.
+## 설치 및 실행
+```
+$ pip3 install -r requirements.txt
+$ echo "BOT_TOKEN=YOUR_BOT_TOKEN_HERE" > .env
+$ python3 main.py
+```
 
-기능 보완하고, 느린 거 개선하고, requirements 쓰고, 뭐 해야한다.
+## 사용법
+봇 초대해서 !도움
 
-토큰 관리용으로 python-dotenv를 썼다. 루비에서는 secret key 관리용으로 dotenv를 곧잘 쓰는데, 파이썬에서는 뭘 쓰는지 몰라서 일단 같은 이름의 패키지를 사용하였다.
+## Acknowledgement
+문제 있으면 내릴게요
+
+## TODO
+* 라이센스
+* 기능추가
+* 이것저것
