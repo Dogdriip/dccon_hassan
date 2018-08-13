@@ -14,7 +14,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 DCCON_HOME_URL = "http://dccon.dcinside.com/"
 DCCON_SEARCH_URL = "http://dccon.dcinside.com/hot/1/title/"
 DCCON_DETAILS_URL = 'http://dccon.dcinside.com/index/package_detail'
-USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
+# USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
 
 client = Bot(command_prefix='')
 
@@ -31,7 +31,7 @@ async def on_message(msg):
         msg_content = msg.content[1:]
         print("{} | message identified: {}".format(str(datetime.now()), msg_content))
 
-        if msg_content == "도움":
+        if msg_content == "!도움":
             print(str(datetime.now()) + " | help command")
             embed = Embed(title="안녕하세요! 디시콘 핫산이에요!",
                           description="명령어들은 아래에서 전부 보실 수 있어요.",
@@ -41,14 +41,14 @@ async def on_message(msg):
             embed.set_footer(text="그코좆망겜")
             await client.send_message(msg.channel, embed=embed)
 
-        elif msg_content == "대하여":
+        elif msg_content == "!대하여":
             print(str(datetime.now()) + " | about command")
             embed = Embed(title="About",
                           description="freakin/awesome/thing/goes/here",
                           color=0x4559e9)
             await client.send_message(msg.channel, embed=embed)
 
-        elif msg_content == "초대링크":
+        elif msg_content == "!초대링크":
             print(str(datetime.now()) + " | invite command")
             await client.send_message(msg.channel, "초대링크드렸습니다")
 
@@ -58,6 +58,9 @@ async def on_message(msg):
             package_name = " ".join(str(x) for x in msg_list[0:-1])  # stupid fuckfuckfuckfuck
 
             print("{} | interpreted: {}, {}".format(str(datetime.now()), package_name, idx))
+
+            if package_name == '':
+                package_name = idx
 
             ############################################################################################################
             # respect https://github.com/gw1021/dccon-downloader/blob/master/python/app.py#L7:L18
@@ -134,8 +137,13 @@ async def on_message(msg):
                         succeed = True
                         break
                 if not succeed:
+                    available_dccon_list = []
+                    for dccon in package_detail_json['detail']:
+                        available_dccon_list.append(dccon['title'])
                     await client.send_message(msg.channel, "\"{}\" 디시콘 패키지에서 \"{}\" 디시콘을 찾지 못했습니다."
                                                            .format(package_name, idx))
+                    await client.send_message(msg.channel, "사용 가능한 디시콘 : {}"
+                                              .format(', '.join(available_dccon_list).rstrip(', ')))
 
             ############################################################################################################
             #  old
