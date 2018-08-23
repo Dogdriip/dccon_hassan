@@ -209,5 +209,3 @@ async def on_message(msg):
 
 if __name__ == "__main__":
     client.run(BOT_TOKEN)
-
-# git test
