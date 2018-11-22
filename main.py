@@ -31,7 +31,7 @@ async def on_message(msg):
         msg_content = msg.content[1:]
         print("{} | message identified: {}".format(str(datetime.now()), msg_content))
 
-        if msg_content == "!도움":
+        if msg_content == "도움":
             print(str(datetime.now()) + " | help command")
             embed = Embed(title="안녕하세요! 디시콘 핫산이에요!",
                           description="명령어들은 아래에서 전부 보실 수 있어요.",
@@ -41,14 +41,14 @@ async def on_message(msg):
             embed.set_footer(text="그코좆망겜")
             await client.send_message(msg.channel, embed=embed)
 
-        elif msg_content == "!대하여":
+        elif msg_content == "대하여":
             print(str(datetime.now()) + " | about command")
             embed = Embed(title="About",
                           description="freakin/awesome/thing/goes/here",
                           color=0x4559e9)
             await client.send_message(msg.channel, embed=embed)
 
-        elif msg_content == "!초대링크":
+        elif msg_content == "초대링크":
             print(str(datetime.now()) + " | invite command")
             await client.send_message(msg.channel, "초대링크드렸습니다")
 
