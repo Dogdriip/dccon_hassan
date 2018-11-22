@@ -69,16 +69,6 @@ async def on_message(msg):
 
             package_search_req = s.get(DCCON_SEARCH_URL + package_name)
             package_search_html = BeautifulSoup(package_search_req.text, 'html.parser')
-            '''
-            package_search_list = package_search_html.select("body > \
-                                                              div.wrap_dccone > \
-                                                              div.content > \
-                                                              div.shop_cont > \
-                                                              div > \
-                                                              div.sticker_list_box > \
-                                                              ul > \
-                                                              li")
-            '''
             package_search_list = package_search_html.select("#right_cont_wrap > div > div.dccon_listbox > ul > li")
 
             try:
@@ -147,68 +137,6 @@ async def on_message(msg):
                                                            .format(package_name, idx))
                     await client.send_message(msg.channel, "사용 가능한 디시콘 : {}"
                                               .format(', '.join(available_dccon_list).rstrip(', ')))
-
-            ############################################################################################################
-            #  old
-            '''
-            options = webdriver.ChromeOptions()
-            options.add_argument("headless")
-            options.add_argument("window-size=1920x1080")
-            options.add_argument("disable-gpu")
-            options.add_argument("user-agent=" + USER_AGENT)
-            driver = webdriver.Chrome("driver/chromedriver", chrome_options=options)
-    
-            # search dccon package with package_name
-            driver.get(DCCON_SEARCH_URL + package_name)
-            package_search_list = list(driver.find_elements_by_css_selector("body > \
-                                                                             div.wrap_dccone > \
-                                                                             div.content > \
-                                                                             div.shop_cont > \
-                                                                             div > \
-                                                                             div.sticker_list_box > \
-                                                                             ul > \
-                                                                             li"))
-    
-            try:
-                target_package = package_search_list[0]  # pick first dccon package from search list
-            except IndexError as e:  # maybe no search result w/ IndexError?
-                print("{} | error! (maybe no search result): {}".format(str(datetime.now()), e))
-                await client.send_message(msg.channel, "{} | error! (maybe no search result): {}".format(str(datetime.now()), e))
-            else:
-                target_package_num = target_package.get_attribute("package_idx")  # get dccon number of target dccon package
-                
-                # go to detail page
-                driver.get(DCCON_DETAILS_URL + target_package_num)
-                html = driver.page_source
-                soup = BeautifulSoup(html, 'html.parser')
-    
-                # dccon_li_list = soup.select("#package_detail > div > ul.Img_box.detail_icon > li")
-    
-                # dccon_img_list = []
-                #
-                # for li in dccon_li_list:
-                #     print(str(li))
-                #     dccon_img_list.append(li.select("img"))
-    
-                dccon = soup.find(attrs={"alt": idx})  # find specified dccon in target package
-    
-                try:
-                    dccon_img = dccon['src']
-                except TypeError as e:
-                    print("{} | error! (maybe wrong dccon idx): {}".format(str(datetime.now()), e))
-                    await client.send_message(msg.channel, "{} | error! (maybe wrong dccon idx): {}".format(str(datetime.now()), e))
-                else:
-                    response = requests.get("http:" + dccon_img, headers={'Referer': DCCON_DETAILS_URL + target_package_num})
-                    buffer = BytesIO(response.content)
-                    await client.send_file(msg.channel, fp=buffer, filename="dccon.gif")
-    
-                    # if str(idx) is None:
-    
-                    # TODO: 예외처리!
-    
-                    # driver.quit()
-            '''
-            ############################################################################################################
 
 if __name__ == "__main__":
     client.run(BOT_TOKEN)
