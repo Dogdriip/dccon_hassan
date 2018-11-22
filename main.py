@@ -44,7 +44,7 @@ async def on_message(msg):
         elif msg_content == "대하여":
             print(str(datetime.now()) + " | about command")
             embed = Embed(title="About",
-                          description="freakin/awesome/thing/goes/here",
+                          description="구에엑",
                           color=0x4559e9)
             await client.send_message(msg.channel, embed=embed)
 
@@ -69,6 +69,7 @@ async def on_message(msg):
 
             package_search_req = s.get(DCCON_SEARCH_URL + package_name)
             package_search_html = BeautifulSoup(package_search_req.text, 'html.parser')
+            '''
             package_search_list = package_search_html.select("body > \
                                                               div.wrap_dccone > \
                                                               div.content > \
@@ -77,6 +78,8 @@ async def on_message(msg):
                                                               div.sticker_list_box > \
                                                               ul > \
                                                               li")
+            '''
+            package_search_list = package_search_html.select("#right_cont_wrap > div > div.dccon_listbox > ul > li")
 
             try:
                 target_package = package_search_list[0]  # pick first dccon package (bs4 obj) from search list
