@@ -15,9 +15,9 @@ def log(text):
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-DCCON_HOME_URL = "http://dccon.dcinside.com/"
-DCCON_SEARCH_URL = "http://dccon.dcinside.com/hot/1/title/"
-DCCON_DETAILS_URL = 'http://dccon.dcinside.com/index/package_detail'
+DCCON_HOME_URL = "https://dccon.dcinside.com/"
+DCCON_SEARCH_URL = "https://dccon.dcinside.com/hot/1/title/"
+DCCON_DETAILS_URL = 'https://dccon.dcinside.com/index/package_detail'
 
 
 client = Bot(command_prefix='')
@@ -80,14 +80,25 @@ async def on_message(msg):
             else:
                 target_package_num = target_package.get("package_idx")  # get dccon number of target dccon package
 
-                package_detail_cookie_req = s.get(DCCON_DETAILS_URL,
-                                                  headers={'X-Requested-With': 'XMLHttpRequest'})
+                # for i in package_search_req.cookies:
+                #     print(i.name, i.value)
+
                 package_detail_req = s.post(DCCON_DETAILS_URL,
-                                            headers={'X-Requested-With': 'XMLHttpRequest'},
-                                            data={'ci_t': package_detail_cookie_req.cookies['ci_c'],
-                                                  'package_idx': target_package_num})
+                                            # content-type: application/x-www-form-urlencoded; charset=UTF-8
+                                            cookies={'ci_c': package_search_req.cookies['ci_c'],
+                                                     'PHPSESSID': package_search_req.cookies['PHPSESSID']},
+                                            headers={'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                                                     'Referer': DCCON_SEARCH_URL + str(package_name.encode('utf-8')),
+                                                     'Origin': DCCON_HOME_URL,
+                                                     'X-Requested-With': 'XMLHttpRequest'},
+                                            data={'ci_t': package_search_req.cookies['ci_c'],
+                                                  'package_idx': target_package_num,
+                                                  'code': ''})
+                
+                # 에러 핸들링 여기서 해야함
 
                 package_detail_json = package_detail_req.json()
+
                 '''
                     info /  'package_idx'
                             'seller_no'
