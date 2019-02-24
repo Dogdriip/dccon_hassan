@@ -8,77 +8,83 @@ from discord.ext.commands import Bot
 from dotenv import load_dotenv
 
 
-def log(text):
-    print("{} | {}".format(str(datetime.now()), text))
+def log(fr, text):
+    print('{} | {} | {}'.format(fr, str(datetime.now()), text))  # TODO: 시간대 조정
 
 
 load_dotenv()
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-DCCON_HOME_URL = "https://dccon.dcinside.com/"
-DCCON_SEARCH_URL = "https://dccon.dcinside.com/hot/1/title/"
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+DCCON_HOME_URL = 'https://dccon.dcinside.com/'
+DCCON_SEARCH_URL = 'https://dccon.dcinside.com/hot/1/title/'
 DCCON_DETAILS_URL = 'https://dccon.dcinside.com/index/package_detail'
+
+EMBED_COLOR = 0x4559e9
 
 
 client = Bot(command_prefix='')
 
 @client.event
 async def on_ready():
-    await client.change_presence(game=Game(name="!도움"))
-    log('Bot ready')
+    await client.change_presence(game=Game(name='!도움'))
+    log('SYSTEM', 'Bot ready')
 
 
 @client.event
 async def on_message(msg):
+    msg_fr = msg.server.name + ' > ' + msg.channel.name + ' > ' + msg.author.name
+
     if msg.content.startswith('!'):  # usage: !dccon pkg name 01
         msg_content = msg.content[1:]
-        log('message identified: ' + msg_content)
+        log(msg_fr, 'message identified: ' + msg_content)
 
-        if msg_content == "도움":
-            log('help command')
-            embed = Embed(title="안녕하세요! 디시콘 핫산이에요!",
-                          description="명령어들은 아래에서 전부 보실 수 있어요.",
-                          color=0x4559e9)
-            embed.add_field(name="사용 방법", value="!디시콘 패키지 제목 콘이름", inline=False)
-            embed.add_field(name="명령어", value="도움, 대하여, 초대링크", inline=False)
-            embed.set_footer(text="그코좆망겜")
+        if msg_content == '도움':
+            log(msg_fr, 'help command')
+            embed = Embed(title='안녕하세요! 디시콘 핫산이에요!',
+                          description='명령어들은 아래에서 전부 보실 수 있어요.',
+                          color=EMBED_COLOR)
+            embed.add_field(name='사용 방법', value='!디시콘 패키지 제목 콘이름', inline=False)
+            embed.add_field(name='명령어', value='도움, 대하여, 초대링크', inline=False)
+            embed.set_footer(text='그코좆망겜')
             await client.send_message(msg.channel, embed=embed)
-        elif msg_content == "대하여":
-            log('about command')
-            embed = Embed(title="About",
-                          description="구에엑",
-                          color=0x4559e9)
+        elif msg_content == '대하여':
+            log(msg_fr, 'about command')
+            embed = Embed(title='About',
+                          description='구에엑',
+                          color=EMBED_COLOR)
             await client.send_message(msg.channel, embed=embed)
-        elif msg_content == "초대링크":
-            log('invite command')
-            await client.send_message(msg.channel, "초대링크드렸습니다")
+        elif msg_content == '초대링크':
+            log(msg_fr, 'invite command')
+            await client.send_message(msg.channel, '초대링크드렸습니다')
         else:
             msg_list = msg_content.split()
             idx = msg_list[-1]  # last word in message goes to index
             package_name = " ".join(str(x) for x in msg_list[0:-1])  # stupid fuckfuckfuckfuck
 
-            log('interpreted: ' + package_name + ', ' + idx)
+            log(msg_fr, 'interpreted: ' + package_name + ', ' + idx)
 
             if package_name == '':
                 package_name = idx
 
             ############################################################################################################
             # respect https://github.com/gw1021/dccon-downloader/blob/master/python/app.py#L7:L18
-            #
+
+            # TODO: 변수명 간단히
 
             s = requests.Session()
 
             package_search_req = s.get(DCCON_SEARCH_URL + package_name)
             package_search_html = BeautifulSoup(package_search_req.text, 'html.parser')
-            package_search_list = package_search_html.select("#right_cont_wrap > div > div.dccon_listbox > ul > li")
+            package_search_list = package_search_html.select('#right_cont_wrap > div > div.dccon_listbox > ul > li')
 
             try:
                 target_package = package_search_list[0]  # pick first dccon package (bs4 obj) from search list
             except IndexError as e:  # maybe no search result w/ IndexError?
-                log('error! (maybe no search result) : ' + str(e))
+                log(msg_fr, 'error! (maybe no search result) : ' + str(e))
                 await client.send_message(msg.channel, '"' + package_name + '"' + ' 디시콘 패키지 정보를 찾을 수 없습니다.')
             else:
-                target_package_num = target_package.get("package_idx")  # get dccon number of target dccon package
+                target_package_num = target_package.get('package_idx')  # get dccon number of target dccon package
+                log(msg_fr, 'processing with: ' + target_package_num)
 
                 # for i in package_search_req.cookies:
                 #     print(i.name, i.value)
@@ -130,7 +136,7 @@ async def on_message(msg):
                                     'path'
                 '''
 
-                # 최적화 필요
+                # 로직 최적화 필요
                 succeed = False
                 for dccon in package_detail_json['detail']:
                     if dccon['title'] == idx:
@@ -143,15 +149,18 @@ async def on_message(msg):
                                                filename=filename)
                         succeed = True
                         break
-                if not succeed:
+                if succeed:
+                    log(msg_fr, 'succeed')
+                else:
+                    log(msg_fr, 'not found')
                     available_dccon_list = []
                     for dccon in package_detail_json['detail']:
                         available_dccon_list.append(dccon['title'])
-                    await client.send_message(msg.channel, "\"{}\" 디시콘 패키지에서 \"{}\" 디시콘을 찾지 못했습니다."
-                                                           .format(package_name, idx))
-                    await client.send_message(msg.channel, "사용 가능한 디시콘 : {}"
+                    await client.send_message(msg.channel, '"{}" 디시콘 패키지에서 "{}" 디시콘을 찾지 못했습니다.'
+                                              .format(package_name, idx))
+                    await client.send_message(msg.channel, '사용 가능한 디시콘 : {}'
                                               .format(', '.join(available_dccon_list).rstrip(', ')))
-            #
+
             #
             ############################################################################################################
 
