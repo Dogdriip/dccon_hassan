@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 from io import BytesIO
 from bs4 import BeautifulSoup
-from discord import Game, Embed
+from discord import Game, Embed, File
 from discord.ext.commands import Bot
 from dotenv import load_dotenv
 
@@ -18,25 +18,31 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 DCCON_HOME_URL = 'https://dccon.dcinside.com/'
 DCCON_SEARCH_URL = 'https://dccon.dcinside.com/hot/1/title/'
 DCCON_DETAILS_URL = 'https://dccon.dcinside.com/index/package_detail'
-
 EMBED_COLOR = 0x4559e9
 
 
 client = Bot(command_prefix='')
 
+
 @client.event
 async def on_ready():
-    await client.change_presence(game=Game(name='!도움'))
+    await client.change_presence(activity=Game(name='!도움'))
     log('SYSTEM', 'Bot ready')
 
 
 @client.event
 async def on_message(msg):
-    msg_fr = msg.server.name + ' > ' + msg.channel.name + ' > ' + msg.author.name
+    # msg_fr = msg.server.name + ' > ' + msg.channel.name + ' > ' + msg.author.name
+    # msg.server --> msg.guild
+    # https://discordpy.readthedocs.io/en/latest/migrating.html#server-is-now-guild
+    msg_guild = msg.guild
+    msg_channel = msg.channel
+    msg_author = msg.author
+    msg_fr = f'{msg_guild.name} > {msg_channel.name} > {msg_author.name}'
 
     if msg.content.startswith('!'):  # usage: !dccon pkg name 01
+        log(msg_fr, 'message identified: ' + msg.content)
         msg_content = msg.content[1:]
-        log(msg_fr, 'message identified: ' + msg_content)
 
         if msg_content == '도움':
             log(msg_fr, 'help command')
@@ -44,24 +50,35 @@ async def on_message(msg):
                           description='명령어들은 아래에서 전부 보실 수 있어요.',
                           color=EMBED_COLOR)
             embed.add_field(name='사용 방법', value='!디시콘 패키지 제목 콘이름', inline=False)
-            embed.add_field(name='명령어', value='도움, 대하여, 초대링크', inline=False)
-            embed.set_footer(text='그코좆망겜')
-            await client.send_message(msg.channel, embed=embed)
+            embed.add_field(name='사용 예시 1', value='!멘헤라콘 15, !마히로콘 리메이크 꿀잠, !좋은말콘 스페셜 에디션 응원, ...', inline=False)
+            embed.add_field(name='사용 예시 2', value='!나나히라 라인, !카구야는인사받고싶어, ... (디시콘 패키지 이름만 입력 시 디시콘 목록 출력)', inline=False)
+            # TODO: 로직을 아예 바꿔야됨
+            embed.add_field(name='명령어', value='!도움, !대하여, !초대링크', inline=False)
+
+            # embed.set_footer(text='그코좆망겜')
+
+            await msg_channel.send(embed=embed)
         elif msg_content == '대하여':
             log(msg_fr, 'about command')
-            embed = Embed(title='About',
-                          description='구에엑',
+            embed = Embed(title='디시콘 핫산',
+                          description='디시콘을 디스코드에서 쓸 수 있게 해주는 디스코드 봇입니다.',
                           color=EMBED_COLOR)
-            await client.send_message(msg.channel, embed=embed)
+            embed.add_field(name='Repository', value='https://github.com/Dogdriip/dccon_hassan', inline=False)
+            embed.add_field(name='Contribution', value='이슈나 PR 보내주세용', inline=False)
+
+            await msg_channel.send(embed=embed)
         elif msg_content == '초대링크':
             log(msg_fr, 'invite command')
-            await client.send_message(msg.channel, '초대링크드렸습니다')
+
+            url = 'https://discordapp.com/oauth2/authorize?&client_id=464437182887886850&scope=bot&permissions=101376'
+            await msg_channel.send(f'봇 초대 링크 : {url}')
+
         else:
             msg_list = msg_content.split()
             idx = msg_list[-1]  # last word in message goes to index
             package_name = " ".join(str(x) for x in msg_list[0:-1])  # stupid fuckfuckfuckfuck
 
-            log(msg_fr, 'interpreted: ' + package_name + ', ' + idx)
+            log(msg_fr, f'interpreted: {package_name}, {idx}')
 
             if package_name == '':
                 package_name = idx
@@ -81,7 +98,7 @@ async def on_message(msg):
                 target_package = package_search_list[0]  # pick first dccon package (bs4 obj) from search list
             except IndexError as e:  # maybe no search result w/ IndexError?
                 log(msg_fr, 'error! (maybe no search result) : ' + str(e))
-                await client.send_message(msg.channel, '"' + package_name + '"' + ' 디시콘 패키지 정보를 찾을 수 없습니다.')
+                await msg_channel.send(f'"{package_name}" 디시콘 패키지 정보를 찾을 수 없습니다.')
             else:
                 target_package_num = target_package.get('package_idx')  # get dccon number of target dccon package
                 log(msg_fr, 'processing with: ' + target_package_num)
@@ -142,11 +159,11 @@ async def on_message(msg):
                     if dccon['title'] == idx:
                         dccon_img = "http://dcimg5.dcinside.com/dccon.php?no=" + dccon['path']
                         dccon_img_request = s.get(dccon_img, headers={'Referer': DCCON_HOME_URL})
+
                         buffer = BytesIO(dccon_img_request.content)
                         filename = package_detail_json['info']['title'] + '_' + dccon['title'] + '.' + dccon['ext']
-                        await client.send_file(msg.channel,
-                                               fp=buffer,
-                                               filename=filename)
+
+                        await msg_channel.send(file=File(buffer, filename))
                         succeed = True
                         break
                 if succeed:
@@ -156,11 +173,9 @@ async def on_message(msg):
                     available_dccon_list = []
                     for dccon in package_detail_json['detail']:
                         available_dccon_list.append(dccon['title'])
-                    await client.send_message(msg.channel, '"{}" 디시콘 패키지에서 "{}" 디시콘을 찾지 못했습니다.'
-                                              .format(package_name, idx))
-                    await client.send_message(msg.channel, '사용 가능한 디시콘 : {}'
-                                              .format(', '.join(available_dccon_list).rstrip(', ')))
 
+                    await msg_channel.send(f'"{package_name}" 디시콘 패키지에서 "{idx}" 디시콘을 찾지 못했습니다.')
+                    await msg_channel.send('사용 가능한 디시콘 : ' + ', '.join(available_dccon_list).rstrip(', '))
             #
             ############################################################################################################
 
