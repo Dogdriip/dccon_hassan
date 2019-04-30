@@ -1,4 +1,4 @@
 requests
 beautifulsoup4
-discord.py
+discord.py>=1.0
 python-dotenv
