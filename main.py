@@ -33,6 +33,14 @@ INVITE_URL = 'https://discordapp.com/oauth2/authorize?&client_id=464437182887886
 bot = commands.Bot(command_prefix='!')
 
 
+'''
+@bot.command(name='콘')
+async def send_dccon(ctx, *args):
+    await ctx.channel.send(args)
+
+'''
+
+
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=Game(name='!도움'))
@@ -45,11 +53,9 @@ async def help(ctx):
     embed = Embed(title='안녕하세요! 디시콘 핫산이에요!',
                   description='명령어들은 아래에서 전부 보실 수 있어요.',
                   color=EMBED_COLOR)
-    # embed.add_field(name='사용 방법', value='!디시콘 패키지 제목 콘이름', inline=False)
+    embed.add_field(name='사용 방법', value='!콘 "디시콘 패키지 제목" "콘 이름"', inline=False)
     embed.add_field(name='사용 예시 1', value='!콘 멘헤라콘 15, !콘 "마히로콘 리메이크" 꿀잠, !콘 "좋은말콘 스페셜 에디션" 응원, ...', inline=False)
     embed.add_field(name='사용 예시 2', value='!콘 "나나히라 라인", !콘 카구야는인사받고싶어, ... (디시콘 패키지 이름만 입력 시 디시콘 목록 출력)', inline=False)
-    # TODO: 로직을 아예 바꿔야됨
-    # TODO: 헬프도 바꿔야됨
     embed.add_field(name='명령어', value='!콘, !도움, !대하여, !초대링크', inline=False)
     embed.set_footer(text='그코좆망겜')
     await ctx.channel.send(embed=embed)
@@ -161,7 +167,8 @@ async def send_dccon(ctx, *args):
                             'path'
         '''
 
-        package_name = package_detail_json['info']['title']  # 검색 결과로 바꿔치기
+        # 검색 결과로 바꿔치기
+        package_name = package_detail_json['info']['title']
 
         if list_print_mode:
             available_dccon_list = []
@@ -194,12 +201,11 @@ async def send_dccon(ctx, *args):
     ############################################################################################################
 
 
-'''
-@bot.command(name='콘')
-async def send_dccon(ctx, *args):
-    await ctx.channel.send(args)
+@bot.event
+async def on_command_error(ctx, error):
+    log(from_text(ctx), error)
+    await ctx.channel.send(error)
 
-'''
 
 if __name__ == "__main__":
     bot.run(BOT_TOKEN)
