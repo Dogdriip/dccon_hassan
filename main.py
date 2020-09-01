@@ -22,15 +22,21 @@ def log(fr, text):
     print(f'{fr} | {str(datetime.now())} | {text}')  # TODO: 시간대 조정
 
 
+
 BOT_TOKEN = os.getenv('BOT_TOKEN')
+
+if "PREFIX" in os.environ:
+    COMMAND_PREFIX = os.getenv("PREFIX")
+else:
+    COMMAND_PREFIX = "!"
+
 DCCON_HOME_URL = 'https://dccon.dcinside.com/'
 DCCON_SEARCH_URL = 'https://dccon.dcinside.com/hot/1/title/'
 DCCON_DETAILS_URL = 'https://dccon.dcinside.com/index/package_detail'
 EMBED_COLOR = 0x4559e9
 INVITE_URL = 'https://discordapp.com/oauth2/authorize?&client_id=464437182887886850&scope=bot&permissions=101376'
 
-
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix=COMMAND_PREFIX)
 
 
 '''
@@ -43,7 +49,7 @@ async def send_dccon(ctx, *args):
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=Game(name='!도움'))
+    await bot.change_presence(activity=Game(name=f'{COMMAND_PREFIX}도움'))
     log('SYSTEM', 'Bot ready')
 
 
@@ -53,10 +59,14 @@ async def help(ctx):
     embed = Embed(title='안녕하세요! 디시콘 핫산이에요!',
                   description='명령어들은 아래에서 전부 보실 수 있어요.',
                   color=EMBED_COLOR)
-    embed.add_field(name='사용 방법', value='!콘 "디시콘 패키지 제목" "콘 이름"', inline=False)
-    embed.add_field(name='사용 예시 1', value='!콘 멘헤라콘 15, !콘 "마히로콘 리메이크" 꿀잠, !콘 "좋은말콘 스페셜 에디션" 응원, ...', inline=False)
-    embed.add_field(name='사용 예시 2', value='!콘 "나나히라 라인", !콘 카구야는인사받고싶어, ... (디시콘 패키지 이름만 입력 시 디시콘 목록 출력)', inline=False)
-    embed.add_field(name='명령어', value='!콘, !도움, !대하여, !초대링크', inline=False)
+    embed.add_field(
+        name='사용 방법', value=f'{COMMAND_PREFIX}콘 "디시콘 패키지 제목" "콘 이름"', inline=False)
+    embed.add_field(
+        name='사용 예시 1', value=f'{COMMAND_PREFIX}콘 멘헤라콘 15, {COMMAND_PREFIX}콘 "마히로콘 리메이크" 꿀잠, {COMMAND_PREFIX}콘 "좋은말콘 스페셜 에디션" 응원, ...', inline=False)
+    embed.add_field(
+        name='사용 예시 2', value=f'{COMMAND_PREFIX}콘 "나나히라 라인", {COMMAND_PREFIX}콘 카구야는인사받고싶어, ... (디시콘 패키지 이름만 입력 시 디시콘 목록 출력)', inline=False)
+    embed.add_field(
+        name='명령어', value=f'{COMMAND_PREFIX}콘, {COMMAND_PREFIX}도움, {COMMAND_PREFIX}대하여, {COMMAND_PREFIX}초대링크', inline=False)
     embed.set_footer(text='그코좆망겜')
     await ctx.channel.send(embed=embed)
 
@@ -73,7 +83,8 @@ async def about(ctx):
     embed = Embed(title='디시콘 핫산',
                   description='디시콘을 디스코드에서 쓸 수 있게 해주는 디스코드 봇입니다.',
                   color=EMBED_COLOR)
-    embed.add_field(name='Repository', value='https://github.com/Dogdriip/dccon_hassan', inline=False)
+    embed.add_field(name='Repository',
+                    value='https://github.com/Dogdriip/dccon_hassan', inline=False)
     await ctx.channel.send(embed=embed)
 
 
@@ -83,7 +94,7 @@ async def send_dccon(ctx, *args):
 
     if not args or len(args) > 2:
         log(from_text(ctx), 'empty args')
-        await ctx.channel.send('사용법을 참고해주세요. (!도움)')
+        await ctx.channel.send(f'사용법을 참고해주세요. ({COMMAND_PREFIX}도움)')
         await ctx.channel.send('디시콘 패키지명이나 디시콘명에 공백이 있을 경우 큰따옴표로 묶어야 합니다.')
         return
 
@@ -95,7 +106,8 @@ async def send_dccon(ctx, *args):
     else:
         list_print_mode = True
 
-    log(from_text(ctx), f'interpreted: {package_name}, {idx}. list_print_mode: {list_print_mode}')
+    log(from_text(ctx),
+        f'interpreted: {package_name}, {idx}. list_print_mode: {list_print_mode}')
 
     ############################################################################################################
     # respect https://github.com/gw1021/dccon-downloader/blob/master/python/app.py#L7:L18
@@ -106,15 +118,18 @@ async def send_dccon(ctx, *args):
 
     package_search_req = s.get(DCCON_SEARCH_URL + package_name)
     package_search_html = BeautifulSoup(package_search_req.text, 'html.parser')
-    package_search_list = package_search_html.select('#right_cont_wrap > div > div.dccon_listbox > ul > li')
+    package_search_list = package_search_html.select(
+        '#right_cont_wrap > div > div.dccon_listbox > ul > li')
 
     try:
-        target_package = package_search_list[0]  # pick first dccon package (bs4 obj) from search list
+        # pick first dccon package (bs4 obj) from search list
+        target_package = package_search_list[0]
     except IndexError as e:  # maybe no search result w/ IndexError?
         log(from_text(ctx), 'error! (maybe no search result) : ' + str(e))
         await ctx.channel.send(f'"{package_name}" 디시콘 패키지 정보를 찾을 수 없습니다.')
     else:
-        target_package_num = target_package.get('package_idx')  # get dccon number of target dccon package
+        # get dccon number of target dccon package
+        target_package_num = target_package.get('package_idx')
         log(from_text(ctx), 'processing with: ' + target_package_num)
 
         # for i in package_search_req.cookies:
@@ -180,11 +195,14 @@ async def send_dccon(ctx, *args):
             succeed = False
             for dccon in package_detail_json['detail']:
                 if dccon['title'] == idx:
-                    dccon_img = "http://dcimg5.dcinside.com/dccon.php?no=" + dccon['path']
-                    dccon_img_request = s.get(dccon_img, headers={'Referer': DCCON_HOME_URL})
+                    dccon_img = "http://dcimg5.dcinside.com/dccon.php?no=" + \
+                        dccon['path']
+                    dccon_img_request = s.get(
+                        dccon_img, headers={'Referer': DCCON_HOME_URL})
 
                     buffer = BytesIO(dccon_img_request.content)
-                    filename = package_name + '_' + dccon['title'] + '.' + dccon['ext']
+                    filename = package_name + '_' + \
+                        dccon['title'] + '.' + dccon['ext']
 
                     await ctx.channel.send(file=File(buffer, filename))
                     succeed = True
