@@ -9,7 +9,8 @@ Heroku 무료 Dyno에서 테스트용으로 돌아가고 있는 봇입니다. �
 ## 설치 및 실행
 ```
 $ pip3 install -r requirements.txt
-$ echo "BOT_TOKEN=YOUR_BOT_TOKEN_HERE" > .env
+$ echo "BOT_TOKEN=<YOUR_BOT_TOKEN_HERE>" > .env
+$ echo "PREFIX=<YOUR_PREFIX_HERE>" >.env
 $ python3 main.py
 ```
 
@@ -19,6 +20,7 @@ $ python3 main.py
 사용 예시 2 : !콘 "나나히라 라인", !콘 카구야는인사받고싶어, ... (디시콘 패키지 이름만 입력 시 디시콘 목록 출력)  
 다른 커맨드는 봇 초대해서 "!도움" 입력
 
+다른 봇 호출 명령어를 사용하려면 .env에 PREFIX 를 넣어주세요. 기본값은 !입니다.
 
 ## TODO
 * 라이센스 추가
